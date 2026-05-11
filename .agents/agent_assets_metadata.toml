@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "XwwRaNAojIeD5QvR7kzdf"
+uri = "file://kitchen-dashboard.txt"
+type = "text"
+title = "kitchen-dashboard.html"
