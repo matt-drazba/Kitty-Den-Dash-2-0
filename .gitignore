@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+
+# Replit
+.local/
