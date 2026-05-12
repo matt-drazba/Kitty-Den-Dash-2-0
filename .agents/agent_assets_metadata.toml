@@ -6,3 +6,9 @@ id = "XwwRaNAojIeD5QvR7kzdf"
 uri = "file://kitchen-dashboard.txt"
 type = "text"
 title = "kitchen-dashboard.html"
+
+[[outputs]]
+id = "6ISvNzGbCBuP-T-Y_xadY"
+uri = "file://README.md"
+type = "text"
+title = "README.md"
