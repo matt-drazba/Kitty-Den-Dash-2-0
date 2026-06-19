@@ -57,8 +57,8 @@ ln -sf ~/Kitty-Den-Dash-2-0/magicmirror/config.js ~/MagicMirror/config/config.js
 
 ## Git
 
-Remote: `https://github.com/matt-drazba/Kitty-Den-Dash-2-0.git`
-Auth: HTTPS via osxkeychain.
+Remote: `git@github.com:matt-drazba/Kitty-Den-Dash-2-0.git`
+Auth: SSH via `~/.ssh/id_ed25519` — run `ssh-add ~/.ssh/id_ed25519` if the agent has no identities.
 
 ## Roadmap
 
