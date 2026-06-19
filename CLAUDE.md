@@ -4,7 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Jeeves is a kitchen status dashboard running on a Raspberry Pi Zero W with a 7" display (800×480px). The Pi runs Chromium in kiosk mode pointed at a Replit-hosted Express/TypeScript server. **The Pi is a pure display — all integration logic lives on Replit.**
+Jeeves is a kitchen status dashboard running on a Raspberry Pi Zero 2 W with a 7" display (800×480px). The Pi runs Chromium in kiosk mode pointed at a locally-hosted MagicMirror server. **Everything runs on the Pi — no cloud dependency.**
+
+Architecture:
+```
+Pi Zero 2 W
+├── MagicMirror (node --run server, port 8080)
+│   ├── clock         (built-in)
+│   ├── weather       (built-in, NWS — no API key)
+│   ├── weather       (forecast, same provider)
+│   └── MMM-homeassistant-sensors  (community module)
+└── Chromium --kiosk → http://localhost:8080
+```
+
+The Replit Express server (`artifacts/api-server/`) is the V1 archive. It is **superseded** and should not be edited going forward. The canonical config now lives in `magicmirror/`.
 
 ## Two-agent setup
 
@@ -13,116 +26,52 @@ This repo is worked on by two AI agents. Respect the boundary:
 | Agent | Environment | Owns |
 |-------|-------------|------|
 | Claude Code (this) | Local / VS Code | `CLAUDE.md`, local commits, pushing |
-| Replit Agent | Replit workspace | `replit.md`, Express server code, Replit config |
+| Replit Agent | Replit workspace | `replit.md`, Replit platform config |
 
-**Do not touch:** `.replit`, `replit.nix`, `artifacts/mockup-sandbox/` — these are Replit platform files. Let the Replit agent handle them.
+**Do not touch:** `.replit`, `replit.nix`, `artifacts/mockup-sandbox/` — Replit platform files.
 
-`replit.md` and `CLAUDE.md` are separate files for separate tools — not duplicates. Keep both updated but don't merge them.
+`replit.md` and `CLAUDE.md` are separate files for separate tools — not duplicates.
 
-## Canonical files
+## What lives in this repo
 
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `artifacts/api-server/dashboard.html` | **The dashboard — edit this one only** |
-| `artifacts/api-server/src/routes/dashboard.ts` | Serves the dashboard HTML at `/api/dashboard` |
-| `artifacts/api-server/src/routes/index.ts` | Route registrations |
-| `artifacts/api-server/src/app.ts` | Express app setup (CORS, logging, JSON) |
+| `magicmirror/config.js` | MagicMirror config — source of truth |
+| `magicmirror/setup.sh` | One-shot Pi setup script |
+| `artifacts/api-server/dashboard.html` | V1 archive — do not edit |
+
+**Do not track** the full `~/MagicMirror` install directory. Only `config.js` and any custom `MMM-*` modules belong in the repo. Symlink them into the install on the Pi:
+
+```bash
+ln -sf ~/Jeeves/magicmirror/config.js ~/MagicMirror/config/config.js
+```
 
 ## Hard constraints
 
-- **Single file** — all HTML, CSS, JS lives in `artifacts/api-server/dashboard.html`. No bundler, no splits.
-- **Vanilla only** — no frameworks, no CDN links, no external resources in the dashboard.
-- **800×480px fixed** — all layout decisions validated at this size.
-- **Pi Zero W is CPU-constrained** — keep per-tick JS work minimal; timer intervals are intentionally coarse.
-
-## Architecture
-
-### Data flow
-
-```
-Pi (Chromium kiosk) → Replit Express server → /api/status → dashboard renders
-```
-
-`fetchData()` in the dashboard is the only integration point. It currently returns hardcoded `TEST_DATA`. To go live, replace its body with `fetch('/api/status')`. The `/api/status` route lives in `artifacts/api-server/src/routes/`.
-
-### Expected `/api/status` shape
-
-```json
-{
-  "weather": {
-    "location": "string", "temp": 68, "condition": "Sunny",
-    "high": 72, "low": 54,
-    "forecast": [{ "day": "Tue", "high": 74, "low": 55, "condition": "Sunny" }]
-  },
-  "status": {
-    "laundry": { "label": "Laundry", "icon": "🫧", "value": "Done", "alert": true, "degraded": false }
-  },
-  "alerts": ["Laundry is done!"]
-}
-```
-
-### Tile rendering — diff, not replace
-
-`renderStatus()` builds tile DOM once, then on subsequent calls only patches `.tile-value` text and class names. **Never reset `innerHTML` on `#status-panel` during updates** — it restarts CSS pulse animations. A full rebuild is forced every `FULL_REBUILD_EVERY = 30` poll cycles (~30 min).
-
-### Tile states
-
-| State | Color | Trigger |
-|-------|-------|---------|
-| Normal | White | Default |
-| Alert | Red pulse | `alert: true` on tile |
-| Degraded | Yellow pulse | `degraded: true` on tile |
-| Stale | Yellow strip | No refresh in >2× `REFRESH_INTERVAL_MS` |
-| Error | Red strip | `fetchData()` threw |
-
-### Timers (coarse by design)
-
-| Timer | Interval |
-|-------|----------|
-| Clock + night-dim | 15s |
-| Data refresh (`REFRESH_INTERVAL_MS`) | 60s |
-| Staleness check | 30s |
-| Alert ticker | 5s |
-
-Night dimming (opacity 0.45) activates 10 PM–6 AM in JS, not via a server flag.
-
-### Adding tiles
-
-Add a new key to the `status` object in the API response. The grid uses CSS `auto-fill minmax(140px, 1fr)` and reflows automatically — no CSS changes needed.
-
-## Roadmap
-
-### Phase 1 — Pi kiosk ✅ (in progress)
-Pi boots Chromium pointed at the Replit URL. No code changes needed.
-
-```bash
-chromium-browser --kiosk --noerrdialogs --disable-infobars \
-  --app=https://<replit-url>/api/dashboard
-```
-
-### Phase 2 — `/api/status` route (next)
-Add `GET /api/status` to `artifacts/api-server/src/routes/`. Start with hardcoded stubs matching `TEST_DATA`, then swap `fetchData()` in the dashboard to hit it.
-
-### Phase 3 — Weather
-Source: **Open-Meteo** (free, no API key). Fetch from the server (not the browser) and cache ~10 min. Hardcode lat/lon for the location.
-
-### Phase 4 — Home Assistant tiles (one at a time)
-Hub: likely Home Assistant. Use HA's REST API — `GET /api/states/<entity_id>` with a `Authorization: Bearer <token>` header. No HA Python client needed; Node `fetch` handles it.
-
-Planned order:
-1. Thermostat (`climate.*`)
-2. Who's home (`person.*`)
-3. Front door / garage (`binary_sensor.*`)
-4. Pool (temperature sensor)
-5. Laundry (power-monitoring plug — alert when wattage drops)
-
-Config: HA entity IDs and token go in environment variables, not hardcoded.
-
-### Phase 5 — Hardening
-- Per-tile try/catch → `degraded: true` on failure (rest of dashboard keeps working)
-- Systemd or Replit always-on to keep server running
+- **No secrets in config.js** — `HA_TOKEN` and any API keys go in `~/.profile` as env vars, not in the file.
+- **width/height are not set in config.js** — they do nothing in serveronly mode. Resolution is set at the OS/display level.
+- **NWS for weather** — not OpenWeatherMap. NWS is keyless and has no sign-up friction.
+- **MMM-homeassistant-sensors** (Snille) — not MMM-HomeAssistant-Items or MMM-HomeAssistantDisplay.
+- **Add modules one at a time** — verify RAM headroom with `htop` after each addition. 512MB is tight.
+- **node --run server** — not `node serveronly` (old, broken syntax).
 
 ## Git
 
 Remote: `https://github.com/matt-drazba/Jeeves.git`
-Auth: HTTPS via osxkeychain — first push after a fresh session requires a manual `git push` in terminal (credentials cached after that).
+Auth: HTTPS via osxkeychain.
+
+## Roadmap
+
+### Phase 1 — Pi kiosk + MagicMirror (current)
+Run `magicmirror/setup.sh` on the Pi. Verify clock + weather render before proceeding.
+
+### Phase 2 — Home Assistant sensors
+Uncomment sensors in `magicmirror/config.js` one at a time. Start with thermostat, then presence, then doors. HA running in Docker on the NAS.
+
+### Phase 3 — Purple Air / air quality
+Check community module list at modules.magicmirror.builders first. Custom module is ~50 lines if nothing fits (polls api.purpleair.com/v1, X-API-Key header).
+
+### Phase 4 — Hardening
+- zram enabled at runtime
+- pm2 restart policies
+- Watchdog for Chromium crash recovery
