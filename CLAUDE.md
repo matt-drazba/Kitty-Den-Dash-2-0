@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Jeeves is a kitchen status dashboard running on a Raspberry Pi Zero 2 W with a 7" display (800×480px). The Pi runs Chromium in kiosk mode pointed at a locally-hosted MagicMirror server. **Everything runs on the Pi — no cloud dependency.**
+Kitty Den Dash is a kitchen status dashboard running on a Raspberry Pi Zero 2 W with a 7" display (800×480px). The Pi runs Chromium in kiosk mode pointed at a locally-hosted MagicMirror server. **Everything runs on the Pi — no cloud dependency.**
 
 Architecture:
 ```
@@ -43,7 +43,7 @@ This repo is worked on by two AI agents. Respect the boundary:
 **Do not track** the full `~/MagicMirror` install directory. Only `config.js` and any custom `MMM-*` modules belong in the repo. Symlink them into the install on the Pi:
 
 ```bash
-ln -sf ~/Jeeves/magicmirror/config.js ~/MagicMirror/config/config.js
+ln -sf ~/Kitty-Den-Dash-2-0/magicmirror/config.js ~/MagicMirror/config/config.js
 ```
 
 ## Hard constraints
@@ -57,7 +57,7 @@ ln -sf ~/Jeeves/magicmirror/config.js ~/MagicMirror/config/config.js
 
 ## Git
 
-Remote: `https://github.com/matt-drazba/Jeeves.git`
+Remote: `https://github.com/matt-drazba/Kitty-Den-Dash-2-0.git`
 Auth: HTTPS via osxkeychain.
 
 ## Roadmap

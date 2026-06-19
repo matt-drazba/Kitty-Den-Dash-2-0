@@ -1,4 +1,4 @@
-# Jeeves — Kitchen Status Dashboard
+# Kitty Den Dash — Kitchen Status Dashboard
 
 A kitchen status dashboard for a Raspberry Pi Zero 2 W with a 7" display (800×480px). Runs MagicMirror in server-only mode with Chromium in kiosk mode. No cloud dependency — everything runs locally on the Pi.
 
@@ -13,10 +13,10 @@ A kitchen status dashboard for a Raspberry Pi Zero 2 W with a 7" display (800×4
 
 ```bash
 # Clone the repo
-git clone https://github.com/matt-drazba/Jeeves.git ~/Jeeves
+git clone https://github.com/matt-drazba/Kitty-Den-Dash-2-0.git ~/Kitty-Den-Dash-2-0
 
 # Run the setup script (~25 min first run)
-bash ~/Jeeves/magicmirror/setup.sh
+bash ~/Kitty-Den-Dash-2-0/magicmirror/setup.sh
 
 # Edit config: set lat/lon and HA host
 nano ~/MagicMirror/config/config.js

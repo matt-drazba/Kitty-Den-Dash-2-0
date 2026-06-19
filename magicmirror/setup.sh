@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Jeeves — Pi setup script (run this on the Pi, not on Replit)
+# Kitty Den Dash — Pi setup script (run this on the Pi, not on Replit)
 # Tested against Raspberry Pi OS Lite (64-bit), Pi Zero 2 W
 # Run as the pi user, not root.
 set -euo pipefail
 
-echo "=== Jeeves Pi setup ==="
+echo "=== Kitty Den Dash Pi setup ==="
 
 # ── 1. Add swap/zram before install (512MB OOM protection) ────────────────
 echo ">>> Adding swap..."
@@ -20,8 +20,8 @@ fi
 echo ">>> Installing MagicMirror (takes ~25 min — don't kill it if it goes quiet)..."
 bash -c "$(curl -sL https://raw.githubusercontent.com/sdetweil/MagicMirror_scripts/master/raspberry.sh)"
 
-# ── 3. Copy Jeeves config ─────────────────────────────────────────────────
-#    Assumes this repo is cloned alongside MagicMirror at ~/Jeeves
+# ── 3. Copy Kitty Den Dash config ─────────────────────────────────────────
+#    Assumes this repo is cloned alongside MagicMirror at ~/Kitty-Den-Dash-2-0
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MM_DIR="$HOME/MagicMirror"
 
@@ -60,10 +60,10 @@ fi
 # ── 7. Chromium kiosk autostart (desktop session, not rc.local) ───────────
 echo ">>> Adding Chromium kiosk to desktop autostart..."
 mkdir -p "$HOME/.config/autostart"
-cat > "$HOME/.config/autostart/jeeves-kiosk.desktop" <<'EOF'
+cat > "$HOME/.config/autostart/kitty-den-dash-kiosk.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=Jeeves Kiosk
+Name=Kitty Den Dash Kiosk
 # Wait until MM server is listening on 8080 before launching Chromium
 Exec=bash -c 'until curl -sf http://localhost:8080 >/dev/null; do sleep 2; done; chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --app=http://localhost:8080'
 EOF

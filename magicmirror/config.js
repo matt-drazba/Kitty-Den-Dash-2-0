@@ -1,4 +1,4 @@
-/* Jeeves — MagicMirror config
+/* Kitty Den Dash — MagicMirror config
  *
  * DO NOT commit secrets. Set HA_TOKEN in your shell environment and
  * reference it via process.env.HA_TOKEN, or keep a config.js.local
