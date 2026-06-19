@@ -1,0 +1,68 @@
+here is where I'm at right now.
+# Plan: Pivot Jeeves to MagicMirror
+## Context
+The current Jeeves setup is a custom dashboard (single HTML file, vanilla JS) served from a Replit Express server. It has no live data — fetchData() returns hardcoded TEST_DATA. Building all integrations (Home Assistant, weather, Purple Air) from scratch would take significant time.
+The user wants to get a working dashboard fast. MagicMirror is purpose-built for this use case, has community modules for Home Assistant, weather, and more, and doesn't require building the integration layer from scratch.
+**Hardware:** Pi Zero 2 W (quad-core Cortex-A53, 512MB RAM). Electron is too heavy, but MagicMirror supports a **server-only mode** (Node.js serves the UI, Chromium renders it) which avoids Electron entirely — same kiosk pattern as current Jeeves.
+---
+## Architecture
+
+Pi Zero 2 W
+├── MagicMirror (node serveronly — port 8080)
+│   ├── clock module (built-in)
+│   ├── weather module (built-in, OpenWeatherMap free tier)
+│   ├── MMM-HomeAssistant (community module → HA REST API)
+│   └── [future] Purple Air custom module
+└── Chromium kiosk → http://localhost:8080
+
+Replit server is no longer needed. The Pi handles everything locally — no cloud dependency, faster refresh, no Replit sleep issues.
+---
+## Implementation Steps
+### Step 1 — Install MagicMirror on the Pi (server-only mode)
+bash
+# On the Pi
+bash -c "$(curl -sL https://raw.githubusercontent.com/MagicMirrorSquared/MagicMirror/master/installers/raspberry.sh)"
+# Or manual: git clone + npm install
+
+Configure config/config.js with address: "localhost", port: 8080.
+Start in server-only mode (no Electron):
+bash
+node serveronly
+
+### Step 2 — Autostart on boot
+Add to /etc/rc.local or a systemd service:
+1. node /home/pi/MagicMirror/serveronly (background)
+2. chromium-browser --kiosk --noerrdialogs http://localhost:8080
+### Step 3 — Configure built-in modules
+In config/config.js:
+- clock — built-in, no config needed
+- weather — built-in, free OpenWeatherMap API key (register at openweathermap.org), hardcode lat/lon
+- weatherforecast — 5-day forecast, same key
+### Step 4 — Add Home Assistant module
+bash
+cd ~/MagicMirror/modules
+git clone https://github.com/wonderslug/MMM-HomeAssistant-Items
+
+Configure with HA URL + long-lived access token (from HA profile page).
+Add entities: thermostat, presence sensors, door/garage sensors, laundry plug.
+### Step 5 — Purple Air (if desired)
+Check for community module (MMM-AirQuality or MMM-PurpleAir). If none fits, write a minimal custom module (~50 lines) that polls the Purple Air API and renders an AQI tile.
+---
+## What Happens to This Repo
+The Replit Express server (artifacts/api-server/) is superseded. Options:
+- Keep the repo as a home for MagicMirror config/config.js and any custom modules (good for version control)
+- Archive/ignore the artifacts/ directory
+- Do nothing yet — decide after MagicMirror is working
+---
+## Verification
+1. SSH into Pi, run node serveronly, confirm no errors
+2. On Pi, open http://localhost:8080 in Chromium — clock and weather should render
+3. Add one HA entity, confirm it appears and updates
+4. Reboot Pi, confirm everything autostarts
+5. Check CPU/memory: htop — should be manageable on Zero 2 W with ≤4 modules
+---
+## Notes
+- MagicMirror config lives in ~/MagicMirror/config/config.js on the Pi
+- HA long-lived token goes in config.js (keep out of git, or use env var substitution)
+- Display is 800×480 HDMI — set in config.js as width: 800, height: 480
+- Start with clock + weather only, then add HA module, then Purple Air — don't add all modules at once on constrained hardware
